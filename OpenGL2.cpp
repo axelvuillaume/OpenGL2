@@ -14,7 +14,8 @@
 using namespace std;
 int SCREEN_X = 1024;
 int SCREEN_Y = 769;
-GLuint vaoCube[2];
+GLuint vaoCube;
+GLuint vaoCube2;
 GLuint vboCube;
 GLuint vboInterlacedCube;
 GLuint passthrough;
@@ -25,9 +26,8 @@ float angleY = 0.0f; // rotation around Y-axis
 bool isDragging = false; // mouse dragging state
 int lastX, lastY;
 
-
 vector<glm::vec4> vPositions;
-vector<glm::vec4> vColors;
+vector<glm::vec4> vColors;  
 
 glm::vec4 vertices[8] = {
 {-0.5,-0.5, 0.5, 1.0 },
@@ -52,11 +52,11 @@ glm::vec4 colors[8] = {
 { 1.0, 1.0, 1.0, 1.0 } // white
 };
 
-void createCube(vector<glm::vec4>& positions, vector<glm::vec4>& cubeColors, glm::vec3 offset, bool uniformColor = false, glm::vec4 uniformColorValue = glm::vec4(1.0, 0.0, 0.0, 1.0)) {
+void createCube(vector<glm::vec4>& positions, vector<glm::vec4>& cubeColors, glm::vec3 offset) {
 	for (int i = 0; i < 8; i++) {
-		glm::vec4 vertex = vertices[i];
-		positions.push_back(vertex + glm::vec4(offset, 0.0));
-		cubeColors.push_back(uniformColor ? uniformColorValue : colors[i]); // Référence au tableau global 'colors'
+		//glm::vec4 vertex = vertices[i];
+		positions.push_back(vertices[i]);
+		cubeColors.push_back(colors[i]); // Utilise directement les couleurs définies
 	}
 }
 
@@ -64,8 +64,8 @@ void createCube(vector<glm::vec4>& positions, vector<glm::vec4>& cubeColors, glm
 void createInterlacedCube(vector<glm::vec4>& interlaced, glm::vec3 offset, glm::vec4 uniformColor = glm::vec4(1.0, 0.0, 0.0, 1.0)) {
 	for (int i = 0; i < 8; i++) {
 		glm::vec4 vertex = vertices[i] + glm::vec4(offset, 0.0);
-		interlaced.push_back(vertex);       // Ajoute la position
-		interlaced.push_back(uniformColor); // Ajoute la couleur interlacée
+		interlaced.push_back(vertex);
+		interlaced.push_back(uniformColor);
 	}
 }
 
@@ -154,15 +154,15 @@ void display() {
 
 	// Use shader and draw first cube
 	glUseProgram(passthrough);
-	glBindVertexArray(vaoCube[0]);
+	glBindVertexArray(vaoCube);
 	updateMVP();  // Update MVP for the first cube
 	glDrawArrays(GL_TRIANGLES, 0, 36);  // Draw the first cube (36 vertices for the cube)
 
-	// Use shader and draw second cube
-	glBindVertexArray(vaoCube[1]);
-	updateMVP();  // Update MVP for the second cube
-	glDrawArrays(GL_TRIANGLES, 0, interlacedData.size() / 2);  // Draw the second cube
-
+	//// Use shader and draw second cube
+	//glBindVertexArray(vaoCube2);
+	//updateMVP();  // Update MVP for the second cube
+	//glDrawArrays(GL_TRIANGLES, 0, interlacedData.size() / 2);  // Draw the second cube
+	//	
 	glutSwapBuffers();
 }
 
@@ -223,12 +223,9 @@ GLuint initShaders(const char* vShaderFile, const char* fShaderFile)
 }
 
 void init() {
-
-
 	passthrough = initShaders("passthrough.vert", "passthrough.frag");
 	colorCube(); // Set up vertices and colors
 	glEnable(GL_DEPTH_TEST);
-
 	
 	glGenBuffers(1, &vboCube);
 	glBindBuffer(GL_ARRAY_BUFFER, vboCube);
@@ -238,10 +235,10 @@ void init() {
 	glBufferSubData(GL_ARRAY_BUFFER, 0, positionSize, vPositions.data()); // Charger les positions
 	glBufferSubData(GL_ARRAY_BUFFER, positionSize, colorSize, vColors.data());
 
-	glGenVertexArrays(2, vaoCube);
+	glGenVertexArrays(1, &vaoCube);
 
 	// Setup first cube VAO
-	glBindVertexArray(vaoCube[0]);
+	glBindVertexArray(vaoCube);
 
 	GLuint vPosition = glGetAttribLocation(passthrough, "vPosition");
 	glEnableVertexAttribArray(vPosition);
@@ -260,7 +257,9 @@ void init() {
 	glBufferData(GL_ARRAY_BUFFER, interlacedSize, interlacedData.data(), GL_STATIC_DRAW);
 
 	// Setup second cube VAO
-	glBindVertexArray(vaoCube[1]);
+
+	glGenVertexArrays(1, &vaoCube2);
+	glBindVertexArray(vaoCube2);
 
 	GLuint vPositionInterlaced = glGetAttribLocation(passthrough, "vPosition");
 	glEnableVertexAttribArray(vPositionInterlaced);
@@ -271,18 +270,18 @@ void init() {
 	glVertexAttribPointer(vColorInterlaced, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4) * 2, BUFFER_OFFSET(sizeof(glm::vec4))); // Couleurs interlacées
 
 
-	glClearColor(1.0, 0.0, 0.0, 1.0);
+	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(-1.0, 3.0, -1.0, 2.0, -2.0, 2.0); // Adjust for second cube's position
+	//glOrtho(-1.0, 3.0, -1.0, 2.0, -2.0, 2.0); // Adjust for second cube's position
 	glViewport(0, 0, SCREEN_X, SCREEN_Y);
 }
 
 
 void cleanup()
 {
-		glDeleteVertexArrays(2, vaoCube); // Supprime les deux VAOs
-		glDeleteBuffers(1, &vboCube); // Supprime le VBO
+		//glDeleteVertexArrays(2, vaoCube); // Supprime les deux VAOs
+		//glDeleteBuffers(1, &vboCube); // Supprime le VBO
 }
 
 
