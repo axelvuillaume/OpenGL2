@@ -14,10 +14,11 @@
 using namespace std;
 int SCREEN_X = 1024;
 int SCREEN_Y = 769;
-GLuint vaoCube;
+GLuint vaoCube[2];
 GLuint vboCube;
+GLuint vboInterlacedCube;
 GLuint passthrough;
-
+vector<glm::vec4> interlacedData;
 
 float angleX = 0.0f; // rotation around X-axis
 float angleY = 0.0f; // rotation around Y-axis
@@ -27,7 +28,6 @@ int lastX, lastY;
 
 vector<glm::vec4> vPositions;
 vector<glm::vec4> vColors;
-vector<glm::vec4> vertexData;
 
 glm::vec4 vertices[8] = {
 {-0.5,-0.5, 0.5, 1.0 },
@@ -52,7 +52,31 @@ glm::vec4 colors[8] = {
 { 1.0, 1.0, 1.0, 1.0 } // white
 };
 
+void createCube(vector<glm::vec4>& positions, vector<glm::vec4>& cubeColors, glm::vec3 offset, bool uniformColor = false, glm::vec4 uniformColorValue = glm::vec4(1.0, 0.0, 0.0, 1.0)) {
+	for (int i = 0; i < 8; i++) {
+		glm::vec4 vertex = vertices[i];
+		positions.push_back(vertex + glm::vec4(offset, 0.0));
+		cubeColors.push_back(uniformColor ? uniformColorValue : colors[i]); // Référence au tableau global 'colors'
+	}
+}
 
+
+void createInterlacedCube(vector<glm::vec4>& interlaced, glm::vec3 offset, glm::vec4 uniformColor = glm::vec4(1.0, 0.0, 0.0, 1.0)) {
+	for (int i = 0; i < 8; i++) {
+		glm::vec4 vertex = vertices[i] + glm::vec4(offset, 0.0);
+		interlaced.push_back(vertex);       // Ajoute la position
+		interlaced.push_back(uniformColor); // Ajoute la couleur interlacée
+	}
+}
+
+// Modified to use createCube for both colored cubes
+void colorCube() {
+	// Create positions and colors for the first cube
+	createCube(vPositions, vColors, glm::vec3(0.0, 0.0, 0.0));
+
+	createInterlacedCube(interlacedData, glm::vec3(1.0, 1.0, 0.0), glm::vec4(0.0, 0.0, 1.0, 1.0)); // Bleu pour le deuxième cube
+
+}
 
 
 void keyboard(unsigned char key, int x, int y)
@@ -63,129 +87,6 @@ void keyboard(unsigned char key, int x, int y)
 		break;
 	}
 }
-
-void addVertexData(glm::vec4 position, glm::vec4 color) {
-    vertexData.push_back(position);
-    vertexData.push_back(color);
-}
-
-void colorCube() {
-	// Face avant (deux triangles)
-	vPositions.push_back(vertices[1]); vColors.push_back(colors[1]); // Triangle 1
-	vPositions.push_back(vertices[0]); vColors.push_back(colors[0]);
-	vPositions.push_back(vertices[3]); vColors.push_back(colors[3]);
-
-	vPositions.push_back(vertices[1]); vColors.push_back(colors[1]); // Triangle 2
-	vPositions.push_back(vertices[3]); vColors.push_back(colors[3]);
-	vPositions.push_back(vertices[2]); vColors.push_back(colors[2]);
-
-	// Face droite
-	vPositions.push_back(vertices[2]); vColors.push_back(colors[2]); // Triangle 1
-	vPositions.push_back(vertices[3]); vColors.push_back(colors[3]);
-	vPositions.push_back(vertices[7]); vColors.push_back(colors[7]);
-
-	vPositions.push_back(vertices[2]); vColors.push_back(colors[2]); // Triangle 2
-	vPositions.push_back(vertices[7]); vColors.push_back(colors[7]);
-	vPositions.push_back(vertices[6]); vColors.push_back(colors[6]);
-
-	// Face arrière
-	vPositions.push_back(vertices[6]); vColors.push_back(colors[6]); // Triangle 1
-	vPositions.push_back(vertices[7]); vColors.push_back(colors[7]);
-	vPositions.push_back(vertices[4]); vColors.push_back(colors[4]);
-
-	vPositions.push_back(vertices[6]); vColors.push_back(colors[6]); // Triangle 2
-	vPositions.push_back(vertices[4]); vColors.push_back(colors[4]);
-	vPositions.push_back(vertices[5]); vColors.push_back(colors[5]);
-
-	// Face gauche
-	vPositions.push_back(vertices[5]); vColors.push_back(colors[5]); // Triangle 1
-	vPositions.push_back(vertices[4]); vColors.push_back(colors[4]);
-	vPositions.push_back(vertices[0]); vColors.push_back(colors[0]);
-
-	vPositions.push_back(vertices[5]); vColors.push_back(colors[5]); // Triangle 2
-	vPositions.push_back(vertices[0]); vColors.push_back(colors[0]);
-	vPositions.push_back(vertices[1]); vColors.push_back(colors[1]);
-
-	// Face bas
-	vPositions.push_back(vertices[3]); vColors.push_back(colors[3]); // Triangle 1
-	vPositions.push_back(vertices[0]); vColors.push_back(colors[0]);
-	vPositions.push_back(vertices[4]); vColors.push_back(colors[4]);
-
-	vPositions.push_back(vertices[3]); vColors.push_back(colors[3]); // Triangle 2
-	vPositions.push_back(vertices[4]); vColors.push_back(colors[4]);
-	vPositions.push_back(vertices[7]); vColors.push_back(colors[7]);
-
-	// Face haut
-	vPositions.push_back(vertices[5]); vColors.push_back(colors[5]); // Triangle 1
-	vPositions.push_back(vertices[1]); vColors.push_back(colors[1]);
-	vPositions.push_back(vertices[2]); vColors.push_back(colors[2]);
-
-	vPositions.push_back(vertices[5]); vColors.push_back(colors[5]); // Triangle 2
-	vPositions.push_back(vertices[2]); vColors.push_back(colors[2]);
-	vPositions.push_back(vertices[6]); vColors.push_back(colors[6]);
-}
-
-void colorCube2() {
-	// Face avant (rouge uniforme)
-	vPositions.push_back(vertices[1]); vColors.push_back(colors[0]); // Triangle 1
-	vPositions.push_back(vertices[0]); vColors.push_back(colors[0]);
-	vPositions.push_back(vertices[3]); vColors.push_back(colors[0]);
-
-	vPositions.push_back(vertices[1]); vColors.push_back(colors[0]); // Triangle 2
-	vPositions.push_back(vertices[3]); vColors.push_back(colors[0]);
-	vPositions.push_back(vertices[2]); vColors.push_back(colors[0]);
-
-	// Face droite (jaune uniforme)
-	vPositions.push_back(vertices[2]); vColors.push_back(colors[1]); // Triangle 1
-	vPositions.push_back(vertices[3]); vColors.push_back(colors[1]);
-	vPositions.push_back(vertices[7]); vColors.push_back(colors[1]);
-
-	vPositions.push_back(vertices[2]); vColors.push_back(colors[1]); // Triangle 2
-	vPositions.push_back(vertices[7]); vColors.push_back(colors[1]);
-	vPositions.push_back(vertices[6]); vColors.push_back(colors[1]);
-
-	// Face arrière (vert uniforme)
-	vPositions.push_back(vertices[6]); vColors.push_back(colors[2]); // Triangle 1
-	vPositions.push_back(vertices[7]); vColors.push_back(colors[2]);
-	vPositions.push_back(vertices[4]); vColors.push_back(colors[2]);
-
-	vPositions.push_back(vertices[6]); vColors.push_back(colors[2]); // Triangle 2
-	vPositions.push_back(vertices[4]); vColors.push_back(colors[2]);
-	vPositions.push_back(vertices[5]); vColors.push_back(colors[2]);
-
-	// Face gauche (bleu uniforme)
-	vPositions.push_back(vertices[5]); vColors.push_back(colors[3]); // Triangle 1
-	vPositions.push_back(vertices[4]); vColors.push_back(colors[3]);
-	vPositions.push_back(vertices[0]); vColors.push_back(colors[3]);
-
-	vPositions.push_back(vertices[5]); vColors.push_back(colors[3]); // Triangle 2
-	vPositions.push_back(vertices[0]); vColors.push_back(colors[3]);
-	vPositions.push_back(vertices[1]); vColors.push_back(colors[3]);
-
-	// Face bas (magenta uniforme)
-	vPositions.push_back(vertices[3]); vColors.push_back(colors[4]); // Triangle 1
-	vPositions.push_back(vertices[0]); vColors.push_back(colors[4]);
-	vPositions.push_back(vertices[4]); vColors.push_back(colors[4]);
-
-	vPositions.push_back(vertices[3]); vColors.push_back(colors[4]); // Triangle 2
-	vPositions.push_back(vertices[4]); vColors.push_back(colors[4]);
-	vPositions.push_back(vertices[7]); vColors.push_back(colors[4]);
-
-	// Face haut (cyan uniforme)
-	vPositions.push_back(vertices[5]); vColors.push_back(colors[5]); // Triangle 1
-	vPositions.push_back(vertices[1]); vColors.push_back(colors[5]);
-	vPositions.push_back(vertices[2]); vColors.push_back(colors[5]);
-
-	vPositions.push_back(vertices[5]); vColors.push_back(colors[5]); // Triangle 2
-	vPositions.push_back(vertices[2]); vColors.push_back(colors[5]);
-	vPositions.push_back(vertices[6]); vColors.push_back(colors[5]);
-}
-
-
-
-
-
-
 
 
 
@@ -248,17 +149,22 @@ void mouseMotion(int x, int y) {
 	}
 }
 
-void display()
-{
+void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glUseProgram(passthrough); // make shader current
-	glBindVertexArray(vaoCube); // make vao current
-	// initiate rendering:
-	// the current shader program draws the current VAO
-	glDrawArrays(GL_TRIANGLES, 0, vPositions.size());
+
+	// Use shader and draw first cube
+	glUseProgram(passthrough);
+	glBindVertexArray(vaoCube[0]);
+	updateMVP();  // Update MVP for the first cube
+	glDrawArrays(GL_TRIANGLES, 0, 36);  // Draw the first cube (36 vertices for the cube)
+
+	// Use shader and draw second cube
+	glBindVertexArray(vaoCube[1]);
+	updateMVP();  // Update MVP for the second cube
+	glDrawArrays(GL_TRIANGLES, 0, interlacedData.size() / 2);  // Draw the second cube
+
 	glutSwapBuffers();
 }
-
 
 
 GLuint initShaders(const char* vShaderFile, const char* fShaderFile)
@@ -312,53 +218,71 @@ GLuint initShaders(const char* vShaderFile, const char* fShaderFile)
 		exit(EXIT_FAILURE);
 	}
 	/* use program object */
-	glUseProgram(program);
+	 (program);
 	return program;
 }
 
-void init()
-{
-	colorCube();
-	colorCube2();
-	glEnable(GL_DEPTH_TEST);
+void init() {
 
-	glGenBuffers(1, &vboCube);
-	glBindBuffer(GL_ARRAY_BUFFER, vboCube);
-	int sp = vPositions.size() * sizeof(glm::vec4);
-	int sc = vColors.size() * sizeof(glm::vec4);
-	glBufferData(GL_ARRAY_BUFFER, sp + sc, NULL, GL_STATIC_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sp, &vPositions[0]); //load
-	glBufferSubData(GL_ARRAY_BUFFER, sp, sc, &vColors[0]); // load
-
-
-	glGenVertexArrays(1, &vaoCube);
-	glBindVertexArray(vaoCube);
 
 	passthrough = initShaders("passthrough.vert", "passthrough.frag");
-	/*glUseProgram(passthrough);*/
+	colorCube(); // Set up vertices and colors
+	glEnable(GL_DEPTH_TEST);
+
+	
+	glGenBuffers(1, &vboCube);
+	glBindBuffer(GL_ARRAY_BUFFER, vboCube);
+	size_t positionSize = vPositions.size() * sizeof(glm::vec4); 
+	size_t colorSize = vColors.size() * sizeof(glm::vec4);
+	glBufferData(GL_ARRAY_BUFFER, positionSize+ colorSize, NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, positionSize, vPositions.data()); // Charger les positions
+	glBufferSubData(GL_ARRAY_BUFFER, positionSize, colorSize, vColors.data());
+
+	glGenVertexArrays(2, vaoCube);
+
+	// Setup first cube VAO
+	glBindVertexArray(vaoCube[0]);
+
+	GLuint vPosition = glGetAttribLocation(passthrough, "vPosition");
+	glEnableVertexAttribArray(vPosition);
+	glVertexAttribPointer(vPosition, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+
+	GLuint vColor = glGetAttribLocation(passthrough, "vColor");
+	glEnableVertexAttribArray(vColor);
+	glVertexAttribPointer(vColor, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(positionSize)); // Couleurs pour le premier cube
 
 
-	GLuint vPosition =
-		glGetAttribLocation(passthrough, "vPosition");
-		glEnableVertexAttribArray(vPosition);
-		glVertexAttribPointer(vPosition, 4, GL_FLOAT,GL_FALSE, 0, BUFFER_OFFSET(0));
+	// Création du deuxième cube avec des données interlacées
+	glGenBuffers(1, &vboInterlacedCube);
 
-	GLuint vColor =
-		glGetAttribLocation(passthrough, "vColor");glEnableVertexAttribArray(vColor); 
-		glVertexAttribPointer(vColor, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sp));
+	glBindBuffer(GL_ARRAY_BUFFER, vboInterlacedCube);
+	size_t interlacedSize = interlacedData.size() * sizeof(glm::vec4);
+	glBufferData(GL_ARRAY_BUFFER, interlacedSize, interlacedData.data(), GL_STATIC_DRAW);
+
+	// Setup second cube VAO
+	glBindVertexArray(vaoCube[1]);
+
+	GLuint vPositionInterlaced = glGetAttribLocation(passthrough, "vPosition");
+	glEnableVertexAttribArray(vPositionInterlaced);
+	glVertexAttribPointer(vPositionInterlaced, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4) * 2, BUFFER_OFFSET(0)); // Positions interlacées
+
+	GLuint vColorInterlaced = glGetAttribLocation(passthrough, "vColor");
+	glEnableVertexAttribArray(vColorInterlaced);
+	glVertexAttribPointer(vColorInterlaced, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4) * 2, BUFFER_OFFSET(sizeof(glm::vec4))); // Couleurs interlacées
 
 
-	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClearColor(1.0, 0.0, 0.0, 1.0);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(-1.0, 1.0, -1.0, 1.0, -2.0, 2.0);
+	glOrtho(-1.0, 3.0, -1.0, 2.0, -2.0, 2.0); // Adjust for second cube's position
 	glViewport(0, 0, SCREEN_X, SCREEN_Y);
 }
 
+
 void cleanup()
 {
-	glDeleteVertexArrays(1, &vaoCube);
-	glDeleteBuffers(1, &vboCube);
+		glDeleteVertexArrays(2, vaoCube); // Supprime les deux VAOs
+		glDeleteBuffers(1, &vboCube); // Supprime le VBO
 }
 
 
