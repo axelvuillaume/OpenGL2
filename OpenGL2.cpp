@@ -13,7 +13,7 @@
 #define BUFFER_OFFSET(offset) ((GLvoid*)(offset))
 using namespace std;
 int SCREEN_X = 1024;
-int SCREEN_Y = 768;
+int SCREEN_Y = 769;
 GLuint vaoCube;
 GLuint vboCube;
 GLuint passthrough;
